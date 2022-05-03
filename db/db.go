@@ -12,9 +12,9 @@ import (
 	logger "github.com/sirupsen/logrus"
 )
 
-func Init(config *config.DbConfig) {
+func Init(typ string, cfg config.SqliteConfig) {
 	fmt.Println("init db")
-	if db, err := db.DbInit(config); err != nil {
+	if db, err := db.DbInit(typ, cfg); err != nil {
 		logger.Errorf("failed to init db, error: %s", err)
 		os.Exit(1)
 	} else {
