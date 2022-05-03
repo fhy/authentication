@@ -54,3 +54,15 @@ func GetTokenWithSession(client *utils.ClientInfo) (interface{}, error) {
 		RefreshToken string `json:"refreshToken"`
 	}{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
+
+func RefleshToken(token string, client *utils.ClientInfo) (interface{}, error) {
+	u := user.User{}
+	accessToken, err := u.RefleshToken(token)
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing token, error: %w", err)
+	}
+	return &struct {
+		AccessToken  string `json:"accessToken"`
+		RefreshToken string `json:"refreshToken"`
+	}{AccessToken: accessToken, RefreshToken: token}, nil
+}

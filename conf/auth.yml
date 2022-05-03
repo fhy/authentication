@@ -1,0 +1,17 @@
+server:
+  ip:
+  port: 9000
+dbtype: sqlite
+db:
+  dbfile: ./auth.db
+log:
+  path: /var/log/webb/auth.log
+  rotation_count: 10
+  level: debug
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: nty0lriZMD79F28
+  db: 0
+jwt:
+  pubkey: ./certs/auth.pub

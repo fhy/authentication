@@ -31,11 +31,6 @@ type User struct {
 	WeChatId    string
 }
 
-type AccessClaims struct {
-	ID int64
-	jwt.StandardClaims
-}
-
 func (u *User) Init() {
 	fmt.Println("init user")
 }
@@ -62,19 +57,20 @@ func (u *User) FindWithWechat(wechat string) error {
 
 func (u *User) GenerateToken() (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(utils.TOKEN_EXPIRE)
+	expireTime := jwt.NewNumericDate(nowTime.Add(utils.TOKEN_EXPIRE))
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		return "", fmt.Errorf("error generating user token, error: %w", err)
 	}
 
-	claims := AccessClaims{
-		ID: u.ID,
-		StandardClaims: jwt.StandardClaims{
+	claims := utils.AccessClaims{
+		UID:       u.ID,
+		TokenType: utils.TOKEN_TYPE_ACCESS,
+		RegisteredClaims: jwt.RegisteredClaims{
 			// 过期时间
-			ExpiresAt: expireTime.Unix(),
-			IssuedAt:  time.Now().Unix(),
-			Id:        node.Generate().String(),
+			ExpiresAt: expireTime,
+			IssuedAt:  jwt.NewNumericDate(nowTime),
+			ID:        node.Generate().String(),
 			// 指定token发行人
 			Issuer: "138e8",
 		},
@@ -92,25 +88,22 @@ func (u *User) GenerateToken() (string, error) {
 
 func (u *User) GenerateRefreshToken() (string, error) {
 	nowTime := time.Now()
-	expireTime := nowTime.Add(utils.REFRESH_EXPIRE)
+	expireTime := jwt.NewNumericDate(nowTime.Add(utils.TOKEN_EXPIRE))
 
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		return "", fmt.Errorf("error generating user refresh token, error: %w", err)
 	}
-	type Claims struct {
-		ID   int64
-		Salt int64
-		jwt.StandardClaims
-	}
-	claims := Claims{
-		ID:   u.ID,
-		Salt: u.LoginAt.Unix(),
-		StandardClaims: jwt.StandardClaims{
+
+	claims := utils.RefreshClaims{
+		UID:       u.ID,
+		TokenType: utils.TOKEN_TYPE_REFRESH,
+		Salt:      u.LoginAt.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
 			// 过期时间
-			ExpiresAt: expireTime.Unix(),
-			IssuedAt:  time.Now().Unix(),
-			Id:        node.Generate().String(),
+			ExpiresAt: expireTime,
+			IssuedAt:  jwt.NewNumericDate(nowTime),
+			ID:        node.Generate().String(),
 			// 指定token发行人
 			Issuer: "138e8",
 		},
@@ -125,32 +118,44 @@ func (u *User) GenerateRefreshToken() (string, error) {
 	return token, nil
 }
 
-func (u *User) RefleshToken() (string, error) {
-	type Claims struct {
-		ID       int64
-		Password string
-		jwt.StandardClaims
+func (u *User) RefleshToken(t string) (string, error) {
+	pubkey := utils.LoadEdPublicKeyFromDisk(conf.Conf.Jwt.PubKeyPath)
+	token, err := utils.VerifyRefleshToken(t, &pubkey)
+	if err != nil {
+		return "", fmt.Errorf("error refreshing token for user:%d, error: %w", u.ID, err)
+	}
+	if err := u.FindWithID(token.Claims.(*utils.RefreshClaims).UID); err != nil {
+		return "", fmt.Errorf("error refreshing token for user:%d, error: %w", u.ID, err)
+	}
+	if token.Claims.(*utils.RefreshClaims).Salt != u.LogoutAt.Unix() {
+		return "", errors.New("error user logout")
+	}
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		return "", fmt.Errorf("error refreshing token for user:%d, error: %w", u.ID, err)
 	}
 	nowTime := time.Now()
-	expireTime := nowTime.Add(utils.TOKEN_EXPIRE)
+	expireTime := jwt.NewNumericDate(nowTime.Add(utils.TOKEN_EXPIRE))
 
-	claims := Claims{
-		ID:       u.ID,
-		Password: u.Password,
-		StandardClaims: jwt.StandardClaims{
+	claims := utils.AccessClaims{
+		UID:       u.ID,
+		TokenType: utils.TOKEN_TYPE_ACCESS,
+		RegisteredClaims: jwt.RegisteredClaims{
 			// 过期时间
-			ExpiresAt: expireTime.Unix(),
+			ExpiresAt: expireTime,
+			IssuedAt:  jwt.NewNumericDate(nowTime),
+			ID:        node.Generate().String(),
 			// 指定token发行人
 			Issuer: conf.Conf.Jwt.Issuer,
 		},
 	}
 
 	//该方法内部生成签名字符串，再用于获取完整、已签名的token
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(conf.Conf.Jwt.Secret)
+	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodEdDSA, claims).SignedString(utils.LoadEdPrivateKeyFromDisk(conf.Conf.Jwt.PrivKeyPath))
 	if err != nil {
-		return "", fmt.Errorf("error creating the token for user: %d, error:%w", u.ID, err)
+		return "", fmt.Errorf("error generate token when refreshing token for user:%d, error: %w", u.ID, err)
 	}
-	return token, nil
+	return accessToken, nil
 }
 
 func (u *User) LoginWithOfficeAccount(client *utils.ClientInfo) error {
