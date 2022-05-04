@@ -25,11 +25,11 @@ func Logout(c *gin.Context) {
 
 func GetToken(c *gin.Context) {
 	if client, err := utils.GetClientInfo(c); err != nil {
-		logrus.Errorf("error getting, error: %s", client.SessionId, err)
+		logrus.Errorf("error getting token for %s, error: %s", client.SessionId, err)
 		utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
 	} else {
 		if token, err := models.GetTokenWithSession(client); err != nil {
-			logrus.Errorf("error getting for %s, error: %s", client.SessionId, err)
+			logrus.Errorf("error getting token for %s, error: %s", client.LogFormatLong(), err)
 			if errors.Is(errors.New(utils.ERRMSG_INVALID_SESSION), err) {
 				utils.ResponseFailedJson(c, utils.ERRCODE_INVALID_SESSION, utils.ERRMSG_INVALID_SESSION, nil, http.StatusBadRequest)
 			} else {
@@ -48,7 +48,7 @@ func RefleshToken(c *gin.Context) {
 		utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
 	} else {
 		if token, err := models.RefleshToken(token, client); err != nil {
-			logrus.Errorf("error getting for %s, error: %s", client.SessionId, err)
+			logrus.Errorf("error refleshing token for %s, error: %s", client.LogFormatLong(), err)
 			utils.ResponseFailedJson(c, utils.ERRCODE_INVALID_TOKEN, utils.ERRMSG_INVALID_TOKEN, nil, http.StatusBadGateway)
 		} else {
 			utils.ResponseSuccessJson(c, token)
