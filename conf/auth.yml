@@ -15,3 +15,8 @@ redis:
   db: 0
 jwt:
   pubkey: ./certs/auth.pub
+  privkey: ./certs/auth
+wechat:
+  miniProGram:
+    appID: wx83e3eb420021144c
+    appSecret: f95cb9bfaa81112526637be0b8af8987

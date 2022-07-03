@@ -70,7 +70,27 @@ func GetOfficialRedirectURL(c *gin.Context) {
 }
 
 func MiniProgramAuth(c *gin.Context) {
-	utils.ResponseSuccessJson(c, "ok")
+	code := c.Param(common.CODE_KEY)
+	session := c.Query("auth")
+	if len(code) > 0 {
+		if client, err := utils.GetClientInfo(c); err != nil {
+			logrus.Errorf("error authentication via miniprogram , error: %s", err)
+			utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
+		} else {
+			if token, err := models.MiniProgramAuth(code, session, client); err != nil {
+				logrus.Errorf("error atuhentication via miniprogram for %s, error: %s", client.LogFormatLong(), err)
+				if errors.Is(errors.New(utils.ERRMSG_INVALID_SESSION), err) {
+					utils.ResponseFailedJson(c, utils.ERRCODE_INVALID_SESSION, utils.ERRMSG_INVALID_SESSION, nil, http.StatusBadRequest)
+				} else {
+					utils.ResponseFailedJson(c, utils.ERRCODE_SERVER_ERROR, utils.ERRMSG_SERVER_ERROR, nil, http.StatusBadGateway)
+				}
+			} else {
+				utils.ResponseSuccessJson(c, token)
+			}
+		}
+	} else {
+		utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
+	}
 }
 
 func OfficialAccountAuth(c *gin.Context) {

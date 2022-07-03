@@ -35,24 +35,25 @@ func (u *User) Init() {
 	fmt.Println("init user")
 }
 
-func (u *User) FindWithWechat(wechat string) error {
+func FindOrCreateUserWithWechat(wechat string) (*User, error) {
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", err)
-		return err
+		return nil, err
 	}
 	res, err := password.Generate(32, 8, 8, false, false)
 	if err != nil {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", err)
-		return err
+		return nil, err
 	}
-	result := common.DB.Where(User{WeChatId: u.WeChatId, Password: res}).Attrs(User{ID: node.Generate().Int64()}).FirstOrCreate(u)
+	user := new(User)
+	result := common.DB.Where(User{WeChatId: wechat}).Attrs(User{ID: node.Generate().Int64(), Password: res}).FirstOrCreate(user)
 
 	if result.Error != nil {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", result.Error)
-		return err
+		return nil, err
 	}
-	return nil
+	return user, nil
 }
 
 func (u *User) GenerateToken() (string, error) {
@@ -169,6 +170,21 @@ func (u *User) LoginWithOfficeAccount(client *utils.ClientInfo) error {
 		}
 		client.UserId = u.ID
 		Login{}.log(client, common.LOGIN_WITH_WECHAT_OFFICIALACCOUNT)
+	})
+	return nil
+}
+
+func (u *User) LoginWithMiniProgrom(session string, client *utils.ClientInfo) error {
+	result := common.RC.Set(context.Background(), fmt.Sprintf("%s%s", utils.USER_SID_REDIS_PREFIX, session), u.ID, utils.TOKEN_EXPIRE)
+	if result.Err() != nil {
+		return fmt.Errorf("error login setting session/uid to redis, error:%w", result.Err())
+	}
+	wggo.WgGo(func() {
+		if err := u.updateLogin(); err != nil {
+			logrus.Errorf("error %s logining error: %s", client.LogFormatShort(), err)
+		}
+		client.UserId = u.ID
+		Login{}.log(client, common.LOGIN_WITH_WECHAT_MINIPROGRAM)
 	})
 	return nil
 }

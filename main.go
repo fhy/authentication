@@ -16,6 +16,7 @@ import (
 	"webb-auth/db"
 	"webb-auth/redis"
 	"webb-auth/router"
+	"webb-auth/wechat"
 
 	"github.com/sirupsen/logrus"
 )
@@ -28,6 +29,7 @@ func init() {
 	utils.InitLogger(&conf.Conf.Log)
 	db.Init(conf.Conf.DbType, conf.Conf.Dbconfig)
 	redis.Init(&conf.Conf.Redis)
+	wechat.Init(&conf.Conf.Redis, &conf.Conf.WeChat)
 }
 
 func main() {

@@ -9,30 +9,38 @@ import (
 
 	"github.com/silenceper/wechat/v2"
 	"github.com/silenceper/wechat/v2/cache"
+	"github.com/silenceper/wechat/v2/miniprogram"
+	mpcfg "github.com/silenceper/wechat/v2/miniprogram/config"
 	"github.com/silenceper/wechat/v2/officialaccount"
 	oacfg "github.com/silenceper/wechat/v2/officialaccount/config"
 	"github.com/silenceper/wechat/v2/officialaccount/oauth"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 var (
 	officalAccount *officialaccount.OfficialAccount
+	miniProgram    *miniprogram.MiniProgram
 )
 
 type WeChat struct {
 	OpenId      string `json:"id" gorm:"id primaryKey"`
 	UnionId     string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	Province    string
+	City        string
+	Country     string
+	Unionid     string
+	Sex         int32
 	Nickname    string
 	AvatarUrl   string `json:"headImageUrl"`
 	PhoneNumber string
+	SessionKey  string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
-func (w WeChat) Create() error {
+func (w WeChat) Save() error {
 	result := common.DB.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&w)
@@ -50,26 +58,32 @@ func GetOfficialRedirectURL(redirectURL string, scope string, state string) (str
 func GetOfficialAccountUserInfo(code string) (*oauth.UserInfo, error) {
 	auth := officalAccount.GetOauth()
 	if accessToken, err := auth.GetUserAccessToken(code); err != nil {
-		logrus.Errorf("failed to get officialaccount user accesstoke, code: %s, error: %s", code, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to get officialaccount user accesstoke, code: %s, error: %w", code, err)
 	} else {
 		if userinfo, err := auth.GetUserInfo(accessToken.AccessToken, accessToken.OpenID, ""); err != nil {
-			logrus.Errorf("failed to get officialaccount user info, accessToken: %s,, openid: %s error: %s",
+			return nil, fmt.Errorf("failed to get officialaccount user info, accessToken: %s,, openid: %s error: %w",
 				accessToken.AccessToken, accessToken.OpenID, err)
-			return nil, err
 		} else {
 			return &userinfo, nil
 		}
 	}
 }
 
+func GetMiniProgromUserInfo(code string) (*WeChat, error) {
+	auth := miniProgram.GetAuth()
+	if userinfo, err := auth.Code2Session(code); err == nil {
+		if userinfo.ErrCode == 0 {
+			return &WeChat{OpenId: userinfo.OpenID, UnionId: userinfo.UnionID, SessionKey: userinfo.SessionKey}, err
+		} else {
+			return nil, fmt.Errorf("failed to get MiniProgrom user info, code: %s error: %s", code, userinfo.ErrMsg)
+		}
+	} else {
+		return nil, fmt.Errorf("failed to get MiniProgrom user info, code: %s error: %w", code, err)
+	}
+}
+
 func Init(redisCfg *config.RedisConfig, wcCfg *conf.WechatConfig) {
 	wc := wechat.NewWechat()
-	officalAccount = wc.GetOfficialAccount(&oacfg.Config{
-		AppID:     wcCfg.OfficialAccount.AppID,
-		AppSecret: wcCfg.OfficialAccount.AppSecret,
-		Token:     wcCfg.OfficialAccount.Token,
-	})
 	wc.SetCache(cache.NewRedis(&cache.RedisOpts{
 		Host:        fmt.Sprintf("%s:%d", redisCfg.Host, redisCfg.Port),
 		Password:    redisCfg.Password,
@@ -77,4 +91,13 @@ func Init(redisCfg *config.RedisConfig, wcCfg *conf.WechatConfig) {
 		MaxActive:   redisCfg.MaxActive,
 		IdleTimeout: redisCfg.IdleTimeout,
 	}))
+	officalAccount = wc.GetOfficialAccount(&oacfg.Config{
+		AppID:     wcCfg.OfficialAccount.AppID,
+		AppSecret: wcCfg.OfficialAccount.AppSecret,
+		Token:     wcCfg.OfficialAccount.Token,
+	})
+	miniProgram = wc.GetMiniProgram(&mpcfg.Config{
+		AppID:     wcCfg.MiniProgram.AppID,
+		AppSecret: wcCfg.MiniProgram.AppSecret,
+	})
 }

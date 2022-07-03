@@ -20,7 +20,9 @@ func Init(typ string, cfg config.SqliteConfig) {
 	} else {
 		db.AutoMigrate(
 			&user.User{},
-			&wechat.WeChat{})
+			&wechat.WeChat{},
+			&user.Login{},
+		)
 		common.DB = db
 	}
 }
