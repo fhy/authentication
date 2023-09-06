@@ -1,8 +1,9 @@
 package user
 
 import (
-	"base/utils"
 	"webb-auth/common"
+
+	"github.com/fhy/utils-golang/utils"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

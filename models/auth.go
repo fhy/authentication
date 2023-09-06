@@ -1,11 +1,12 @@
 package models
 
 import (
-	"base/utils"
 	"errors"
 	"fmt"
 	"webb-auth/user"
 	"webb-auth/wechat"
+
+	"github.com/fhy/utils-golang/utils"
 )
 
 func MiniProgramAuth(code string, session string, client *utils.ClientInfo) (interface{}, error) {

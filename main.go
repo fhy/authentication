@@ -1,8 +1,6 @@
 package main
 
 import (
-	"base/utils"
-	"base/wggo"
 	"context"
 	"flag"
 	"fmt"
@@ -17,6 +15,9 @@ import (
 	"webb-auth/redis"
 	"webb-auth/router"
 	"webb-auth/wechat"
+
+	"github.com/fhy/utils-golang/utils"
+	"github.com/fhy/utils-golang/wggo"
 
 	"github.com/sirupsen/logrus"
 )

@@ -1,10 +1,10 @@
 package conf
 
 import (
-	"base/config"
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	"github.com/fhy/utils-golang/config"
 
 	"gopkg.in/yaml.v2"
 )
@@ -70,7 +70,7 @@ func LoadConf(configPath string) *[]byte {
 			os.Exit(1)
 		}
 	}
-	configFile, err := ioutil.ReadFile(configPath)
+	configFile, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Print("can't read config file\n")
 		os.Exit(1)

@@ -1,11 +1,13 @@
 package wechat
 
 import (
-	"base/config"
+	"context"
 	"fmt"
 	"time"
 	"webb-auth/common"
 	"webb-auth/conf"
+
+	"github.com/fhy/utils-golang/config"
 
 	"github.com/silenceper/wechat/v2"
 	"github.com/silenceper/wechat/v2/cache"
@@ -83,11 +85,14 @@ func GetMiniProgromUserInfo(code string) (*WeChat, error) {
 }
 
 func Init(redisCfg *config.RedisConfig, wcCfg *conf.WechatConfig) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	wc := wechat.NewWechat()
-	wc.SetCache(cache.NewRedis(&cache.RedisOpts{
+	wc.SetCache(cache.NewRedis(ctx, &cache.RedisOpts{
 		Host:        fmt.Sprintf("%s:%d", redisCfg.Host, redisCfg.Port),
 		Password:    redisCfg.Password,
 		Database:    redisCfg.DB,
+		MaxIdle:     redisCfg.MaxIdle,
 		MaxActive:   redisCfg.MaxActive,
 		IdleTimeout: redisCfg.IdleTimeout,
 	}))

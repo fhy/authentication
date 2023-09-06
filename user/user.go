@@ -1,8 +1,6 @@
 package user
 
 import (
-	"base/utils"
-	"base/wggo"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"time"
 	"webb-auth/common"
 	"webb-auth/conf"
+
+	"github.com/fhy/utils-golang/utils"
+	"github.com/fhy/utils-golang/wggo"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/golang-jwt/jwt/v4"
@@ -195,11 +196,11 @@ func (u *User) GetFromSession(session string) error {
 	}
 	result, err := common.RC.Get(context.Background(), fmt.Sprintf("%s%s", utils.USER_SID_REDIS_PREFIX, session)).Result()
 	if err != nil {
-		logrus.Debugf("error getting user, getting id with session:%s from redis, error:%w", session, err)
+		logrus.Debugf("error getting user, getting id with session:%s from redis, error:%s", session, err)
 		return fmt.Errorf("error getting user from session, error:%w", err)
 	}
 	if id, err := strconv.ParseInt(result, 10, 64); err != nil {
-		logrus.Debugf("error getting user, getting id with session: %s from string:%s, error:%w", session, result, err)
+		logrus.Debugf("error getting user, getting id with session: %s from string:%s, error:%s", session, result, err)
 		return fmt.Errorf("error getting user from session, error:%w", err)
 	} else {
 		if id < 1 {
@@ -207,7 +208,7 @@ func (u *User) GetFromSession(session string) error {
 			return fmt.Errorf("error getting user from session, error:%w", errors.New(utils.ERRMSG_INVALID_Id))
 		}
 		if err := u.FindWithID(id); err != nil {
-			logrus.Debugf("error getting user with session: %s from id:%d, error:%w", session, id, err)
+			logrus.Debugf("error getting user with session: %s from id:%d, error:%s", session, id, err)
 			return fmt.Errorf("error getting user from session, error:%w", err)
 		}
 		return nil
