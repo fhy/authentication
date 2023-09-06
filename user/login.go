@@ -31,6 +31,6 @@ func (login Login) log(client *utils.ClientInfo, loginWith string) {
 		UserAgent: client.UserAgent,
 	})
 	if result.Error != nil {
-		logrus.Error("error loging user(%s)'s login,error: %s", client.LogFormatShort(), result.Error)
+		logrus.Errorf("error loging user(%s)'s login,error: %s", client.LogFormatShort(), result.Error.Error())
 	}
 }
