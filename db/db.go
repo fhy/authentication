@@ -1,13 +1,14 @@
 package db
 
 import (
-	"base/config"
-	"base/db"
 	"fmt"
 	"os"
 	"webb-auth/common"
 	"webb-auth/user"
 	"webb-auth/wechat"
+
+	"github.com/fhy/utils-golang/config"
+	"github.com/fhy/utils-golang/db"
 
 	logger "github.com/sirupsen/logrus"
 )

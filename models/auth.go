@@ -1,11 +1,12 @@
 package models
 
 import (
-	"base/utils"
 	"errors"
 	"fmt"
 	"webb-auth/user"
 	"webb-auth/wechat"
+
+	"github.com/fhy/utils-golang/utils"
 )
 
 func OfficialAccountAuth(code string, client *utils.ClientInfo) error {

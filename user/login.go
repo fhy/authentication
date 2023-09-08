@@ -1,8 +1,9 @@
 package user
 
 import (
-	"base/utils"
 	"webb-auth/common"
+
+	"github.com/fhy/utils-golang/utils"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -30,6 +31,6 @@ func (login Login) log(client *utils.ClientInfo, loginWith string) {
 		UserAgent: client.UserAgent,
 	})
 	if result.Error != nil {
-		logrus.Error("error loging user(%s)'s login,error: %s", client.LogFormatShort(), result.Error)
+		logrus.Errorf("error loging user(%s)'s login,error: %s", client.LogFormatShort(), result.Error)
 	}
 }

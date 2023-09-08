@@ -1,11 +1,12 @@
 package redis
 
 import (
-	"base/config"
-	"base/db"
 	"fmt"
 	"os"
 	"webb-auth/common"
+
+	"github.com/fhy/utils-golang/config"
+	"github.com/fhy/utils-golang/db"
 
 	"github.com/sirupsen/logrus"
 )

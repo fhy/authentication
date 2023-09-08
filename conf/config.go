@@ -1,10 +1,10 @@
 package conf
 
 import (
-	"base/config"
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	"github.com/fhy/utils-golang/config"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,14 +15,15 @@ type WechatConfig struct {
 }
 
 type Config struct {
-	Server   config.Server       `yaml:"server"`
-	Log      config.LogConfig    `yaml:"log"`
-	Redis    config.RedisConfig  `yaml:"redis"`
-	WeChat   WechatConfig        `yaml:"wechat"`
-	Cookie   config.CookieConfig `yaml:"cookie"`
-	DbType   string              `yaml:"dbtype"`
-	Dbconfig config.SqliteConfig `yaml:"db"`
-	Jwt      config.Jwt          `yaml:"jwt"`
+	Server   config.Server         `yaml:"server"`
+	Log      config.LogConfig      `yaml:"log"`
+	Redis    config.RedisConfig    `yaml:"redis"`
+	WeChat   WechatConfig          `yaml:"wechat"`
+	DingTalk config.DingTalkConfig `yaml:"dingtalk"`
+	Cookie   config.CookieConfig   `yaml:"cookie"`
+	DbType   string                `yaml:"dbtype"`
+	Dbconfig config.SqliteConfig   `yaml:"db"`
+	Jwt      config.Jwt            `yaml:"jwt"`
 }
 
 var (
@@ -70,7 +71,7 @@ func LoadConf(configPath string) *[]byte {
 			os.Exit(1)
 		}
 	}
-	configFile, err := ioutil.ReadFile(configPath)
+	configFile, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Print("can't read config file\n")
 		os.Exit(1)

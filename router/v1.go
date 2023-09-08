@@ -1,9 +1,10 @@
 package router
 
 import (
-	"base/utils"
 	"webb-auth/conf"
 	"webb-auth/controllers"
+
+	"github.com/fhy/utils-golang/utils"
 
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"

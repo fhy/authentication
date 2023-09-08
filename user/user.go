@@ -1,8 +1,6 @@
 package user
 
 import (
-	"base/utils"
-	"base/wggo"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"time"
 	"webb-auth/common"
 	"webb-auth/conf"
+
+	"github.com/fhy/utils-golang/utils"
+	"github.com/fhy/utils-golang/wggo"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/golang-jwt/jwt/v4"

@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"base/utils"
-	"base/wggo"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +8,9 @@ import (
 	"webb-auth/common"
 	"webb-auth/models"
 	"webb-auth/wechat"
+
+	"github.com/fhy/utils-golang/utils"
+	"github.com/fhy/utils-golang/wggo"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -44,7 +45,7 @@ func GetToken(c *gin.Context) {
 func RefleshToken(c *gin.Context) {
 	token := c.Param("refresh_token")
 	if client, err := utils.GetClientInfo(c); err != nil {
-		logrus.Errorf("error getting, error: %s", client.SessionId, err)
+		logrus.Errorf("client %s error getting, error: %s", client.SessionId, err)
 		utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
 	} else {
 		if token, err := models.RefleshToken(token, client); err != nil {
@@ -54,7 +55,7 @@ func RefleshToken(c *gin.Context) {
 			utils.ResponseSuccessJson(c, token)
 			result := common.RC.Expire(context.Background(), fmt.Sprintf("%s%s", utils.USER_SID_REDIS_PREFIX, client.SessionId), utils.TOKEN_EXPIRE)
 			if result.Err() != nil {
-				logrus.Errorf("error expire setting session/uid to redis, error:%w", result.Err())
+				logrus.Errorf("error expire setting session/uid to redis, error:%s", result.Err())
 			}
 		}
 	}
