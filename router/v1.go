@@ -20,6 +20,7 @@ func initRouterV1(r *gin.Engine) {
 		i.GET("logout", controllers.Logout)
 		i.GET("token", controllers.GetToken)
 		i.POST("token", controllers.RefleshToken)
+		i.GET("dingtalk/auth", controllers.DingTalkAuth) // 钉钉认证
 		i.GET("wechat/offiaccount/redirecturl", controllers.GetOfficialRedirectURL)
 		i.GET("wechat/offiaccount/auth", controllers.OfficialAccountAuth)   // 微信公众号认证
 		i.GET("wechat/miniprogram/auth/:code", controllers.MiniProgramAuth) // 微信小程序登录凭证校验

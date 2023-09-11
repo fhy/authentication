@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"webb-auth/dingtalk"
 	"webb-auth/user"
 	"webb-auth/wechat"
 
@@ -33,6 +34,28 @@ func OfficialAccountAuth(code string, client *utils.ClientInfo) error {
 			return nil
 		} else {
 			return errors.New(userinfo.ErrMsg)
+		}
+	}
+}
+
+func DingTalkAuth(code string, client *utils.ClientInfo) error {
+	if accessToken, err := dingtalk.GetAccessToken(code); err != nil {
+		return fmt.Errorf("failed to get access token via dingtalk, code: %s, error: %s", code, err)
+	} else {
+		if userinfo, err := dingtalk.GetUserInfo(accessToken); err != nil {
+			return fmt.Errorf("failed to get user info via dingtalk, code: %s, error: %s", code, err)
+		} else {
+			u := user.User{}
+			if err := u.FindWithDingtalk(userinfo.UnionId); err != nil {
+				return fmt.Errorf("error logining with dingtalk, error: %w", err)
+			}
+			if err := u.LoginWithDingtalk(client); err != nil {
+				return fmt.Errorf("error logining with dingtalk, error: %w", err)
+			}
+			if err := userinfo.Create(); err != nil {
+				return fmt.Errorf("error logining with create dingtalk, error: %w", err)
+			}
+			return nil
 		}
 	}
 }

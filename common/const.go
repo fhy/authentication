@@ -10,6 +10,7 @@ const (
 )
 
 const (
+	LOGIN_WITH_DINGTALK               = "dingtalk"
 	LOGIN_WITH_WECHAT_OFFICIALACCOUNT = "officialaccount"
 	LOGIN_WITH_WECHAT_MINIPROGRAM     = "miniprogram"
 	LOGIN_WITH_MOBILE_PHONE           = "mobilephone"

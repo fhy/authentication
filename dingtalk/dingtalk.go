@@ -1,7 +1,10 @@
 package dingtalk
 
 import (
+	"fmt"
 	"time"
+
+	"webb-auth/common"
 
 	"github.com/fhy/utils-golang/config"
 
@@ -11,6 +14,7 @@ import (
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var getAccessTokenRequest dingtalkoauth2_1_0.GetUserTokenRequest
@@ -27,6 +31,17 @@ type DingTalk struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
+}
+
+func (dk DingTalk) Create() error {
+	result := common.DB.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&dk)
+	if result.Error != nil {
+		err := fmt.Errorf("error upsert the dingtalk, error: %w", result.Error)
+		return err
+	}
+	return nil
 }
 
 // This file is auto-generated, don't edit it. Thanks.
@@ -54,77 +69,45 @@ func ContactClient() (_result *dingtalkcontact_1_0.Client, _err error) {
 	return _result, _err
 }
 
-func GetUserInfo(accessToken string) (_err error) {
+func GetUserInfo(accessToken string) (_dingtalk *DingTalk, _err error) {
 	client, _err := ContactClient()
 	if _err != nil {
-		return _err
+		return nil, _err
 	}
 
 	getUserHeaders := &dingtalkcontact_1_0.GetUserHeaders{}
 	getUserHeaders.XAcsDingtalkAccessToken = tea.String(accessToken)
-	tryErr := func() (_e error) {
-		defer func() {
-			if r := tea.Recover(recover()); r != nil {
-				_e = r
-			}
-		}()
-		_, _err = client.GetUserWithOptions(tea.String("me"), getUserHeaders, &util.RuntimeOptions{})
-		if _err != nil {
-			return _err
-		}
+	_result, _err := client.GetUserWithOptions(tea.String("me"), getUserHeaders, &util.RuntimeOptions{})
 
-		return nil
-	}()
-
-	if tryErr != nil {
-		var err = &tea.SDKError{}
-		if _t, ok := tryErr.(*tea.SDKError); ok {
-			err = _t
-		} else {
-			err.Message = tea.String(tryErr.Error())
-		}
-		if !tea.BoolValue(util.Empty(err.Code)) && !tea.BoolValue(util.Empty(err.Message)) {
-			// err 中含有 code 和 message 属性，可帮助开发定位问题
-		}
-
+	if _err != nil {
+		return nil, _err
 	}
-	return _err
+
+	return &DingTalk{
+		OpenId:      *_result.Body.OpenId,
+		UnionId:     *_result.Body.UnionId,
+		Nickname:    *_result.Body.Nick,
+		AvatarUrl:   *_result.Body.AvatarUrl,
+		PhoneNumber: *_result.Body.Mobile,
+		StateCode:   *_result.Body.StateCode,
+		Email:       *_result.Body.Email,
+	}, nil
+
 }
 
-func GetAccessToken(code string) (_err error) {
+func GetAccessToken(code string) (accessToken string, _err error) {
 	client, _err := CreateClient()
 	if _err != nil {
-		return _err
+		return "", _err
 	}
 
-	tryErr := func() (_e error) {
-		defer func() {
-			if r := tea.Recover(recover()); r != nil {
-				_e = r
-			}
-		}()
-		getAccessTokenRequest.SetCode(code)
-		_, _err = client.GetUserToken(&getAccessTokenRequest)
-		if _err != nil {
-			return _err
-		}
-
-		return nil
-	}()
-
-	if tryErr != nil {
-		var err = &tea.SDKError{}
-		if _t, ok := tryErr.(*tea.SDKError); ok {
-			err = _t
-		} else {
-			err.Message = tea.String(tryErr.Error())
-		}
-		if !tea.BoolValue(util.Empty(err.Code)) && !tea.BoolValue(util.Empty(err.Message)) {
-			// err 中含有 code 和 message 属性，可帮助开发定位问题
-		}
-
+	getAccessTokenRequest.SetCode(code)
+	result, _err := client.GetUserToken(&getAccessTokenRequest)
+	if _err != nil {
+		return "", _err
 	}
-	return _err
+
+	return *result.Body.AccessToken, nil
 }
 
 func Init(dkCfg *config.DingTalkConfig) {

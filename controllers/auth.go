@@ -94,6 +94,27 @@ func OfficialAccountAuth(c *gin.Context) {
 	}
 }
 
+func DingTalkAuth(c *gin.Context) {
+	code := c.Query(common.CODE_KEY)
+	state := c.Query(common.STATE_KEY)
+	//utils.ResponseSuccessJson(c, "ok")
+	utils.ResponseText(c, utils.SUCCESS_MSG_CUSTOM)
+	if len(code) > 0 || len(state) > 0 {
+		wggo.WgGo(func() {
+			if client, err := utils.GetClientInfo(c); err != nil {
+				logrus.Errorf("error authenticating with dingtalk, error: %s", err)
+			} else {
+				client.SessionId = state
+				if err := models.DingTalkAuth(code, client); err != nil {
+					logrus.Errorf("error authenticating with dingtalk, error: %s", err)
+				}
+			}
+		})
+	} else {
+		logrus.Errorf("dingtalk auth, error code: %s or state: %s", code, state)
+	}
+}
+
 func GetMiniProgromQrcode(c *gin.Context) {
 	utils.ResponseSuccessJson(c, "ok")
 }

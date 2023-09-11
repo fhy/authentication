@@ -30,13 +30,14 @@ type User struct {
 	Email       string         `json:"email"`
 	MobilePhone string
 	WeChatId    string
+	DingTalkId  string
 }
 
 func (u *User) Init() {
 	fmt.Println("init user")
 }
 
-func (u *User) FindWithWechat(wechat string) error {
+func (u *User) FindWithWechat(wechatId string) error {
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", err)
@@ -47,10 +48,30 @@ func (u *User) FindWithWechat(wechat string) error {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", err)
 		return err
 	}
-	result := common.DB.Where(User{WeChatId: u.WeChatId, Password: res}).Attrs(User{ID: node.Generate().Int64()}).FirstOrCreate(u)
+	result := common.DB.Where(User{WeChatId: wechatId}).Attrs(User{ID: node.Generate().Int64(), Password: res}).FirstOrCreate(u)
 
 	if result.Error != nil {
 		err = fmt.Errorf("error getting the user with wechat, error: %w", result.Error)
+		return err
+	}
+	return nil
+}
+
+func (u *User) FindWithDingtalk(dingtalkId string) error {
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		err = fmt.Errorf("error getting the user with dingtalk, error: %w", err)
+		return err
+	}
+	res, err := password.Generate(32, 8, 8, false, false)
+	if err != nil {
+		err = fmt.Errorf("error getting the user with dingtalk, error: %w", err)
+		return err
+	}
+	result := common.DB.Where(User{DingTalkId: dingtalkId}).Attrs(User{ID: node.Generate().Int64(), Password: res}).FirstOrCreate(u)
+
+	if result.Error != nil {
+		err = fmt.Errorf("error getting the user with dingtalk, error: %w", result.Error)
 		return err
 	}
 	return nil
@@ -174,17 +195,32 @@ func (u *User) LoginWithOfficeAccount(client *utils.ClientInfo) error {
 	return nil
 }
 
+func (u *User) LoginWithDingtalk(client *utils.ClientInfo) error {
+	result := common.RC.Set(context.Background(), fmt.Sprintf("%s%s", utils.USER_SID_REDIS_PREFIX, client.SessionId), u.ID, utils.TOKEN_EXPIRE)
+	if result.Err() != nil {
+		return fmt.Errorf("error login setting session/uid to redis, error:%w", result.Err())
+	}
+	wggo.WgGo(func() {
+		if err := u.updateLogin(); err != nil {
+			logrus.Errorf("error %s logining error: %s", client.LogFormatShort(), err)
+		}
+		client.UserId = u.ID
+		Login{}.log(client, common.LOGIN_WITH_DINGTALK)
+	})
+	return nil
+}
+
 func (u *User) GetFromSession(session string) error {
 	if len(session) < 1 {
 		return errors.New(utils.ERRMSG_INVALID_SESSION)
 	}
 	result, err := common.RC.Get(context.Background(), fmt.Sprintf("%s%s", utils.USER_SID_REDIS_PREFIX, session)).Result()
 	if err != nil {
-		logrus.Debugf("error getting user, getting id with session:%s from redis, error:%w", session, err)
+		logrus.Debugf("error getting user, getting id with session:%s from redis, error:%s", session, err)
 		return fmt.Errorf("error getting user from session, error:%w", err)
 	}
 	if id, err := strconv.ParseInt(result, 10, 64); err != nil {
-		logrus.Debugf("error getting user, getting id with session: %s from string:%s, error:%w", session, result, err)
+		logrus.Debugf("error getting user, getting id with session: %s from string:%s, error:%s", session, result, err)
 		return fmt.Errorf("error getting user from session, error:%w", err)
 	} else {
 		if id < 1 {
@@ -192,7 +228,7 @@ func (u *User) GetFromSession(session string) error {
 			return fmt.Errorf("error getting user from session, error:%w", errors.New(utils.ERRMSG_INVALID_Id))
 		}
 		if err := u.FindWithID(id); err != nil {
-			logrus.Debugf("error getting user with session: %s from id:%d, error:%w", session, id, err)
+			logrus.Debugf("error getting user with session: %s from id:%d, error:%s", session, id, err)
 			return fmt.Errorf("error getting user from session, error:%w", err)
 		}
 		return nil
