@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"webb-auth/common"
+	"webb-auth/dingtalk"
 	"webb-auth/user"
 	"webb-auth/wechat"
 
@@ -21,6 +22,8 @@ func Init(typ string, cfg config.SqliteConfig) {
 	} else {
 		db.AutoMigrate(
 			&user.User{},
+			&user.Login{},
+			&dingtalk.DingTalk{},
 			&wechat.WeChat{})
 		common.DB = db
 	}

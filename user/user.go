@@ -13,7 +13,7 @@ import (
 	"github.com/fhy/utils-golang/wggo"
 
 	"github.com/bwmarrin/snowflake"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sethvargo/go-password/password"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -106,6 +106,15 @@ func (u *User) GenerateToken() (string, error) {
 		return "", fmt.Errorf("error creating the token for user: %d, error:%w", u.ID, err)
 	}
 	return token, nil
+}
+
+func GetFromId(id int64) (_user *User, _err error) {
+	_user = &User{}
+	result := common.DB.First(_user, id)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error getting user from id: %d, error: %w", id, result.Error)
+	}
+	return _user, nil
 }
 
 func (u *User) GenerateRefreshToken() (string, error) {

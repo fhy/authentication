@@ -1,8 +1,9 @@
 package common
 
 const (
-	CODE_KEY  = "code"
-	STATE_KEY = "state"
+	CODE_KEY     = "code"
+	AUTHCODE_KEY = "authCode"
+	STATE_KEY    = "state"
 )
 
 const (

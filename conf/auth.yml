@@ -5,7 +5,7 @@ dbtype: sqlite
 db:
   dbfile: ./auth.db
 log:
-  path: /var/log/webb/auth.log
+  path: logs/auth.log
   rotation_count: 10
   level: debug
 redis:
@@ -15,3 +15,7 @@ redis:
   db: 0
 jwt:
   pubkey: ./certs/auth.pub
+  privkey: ./certs/auth
+dingtalk:
+  id: dingbnt5pgtoonmbjimz
+  secret: XPKLcyyb8_e0-5KFz-dQfXwZFqOWUBv1CnuFG5DKivSkYthj7gJNvZWHIyg5nBMx

@@ -20,7 +20,7 @@ import (
 var getAccessTokenRequest dingtalkoauth2_1_0.GetUserTokenRequest
 
 type DingTalk struct {
-	OpenId      string `json:"id" gorm:"id primaryKey"`
+	OpenId      string `json:"id" gorm:"column:id;primaryKey"`
 	UnionId     string
 	Nickname    string
 	AvatarUrl   string `json:"headImageUrl"`
@@ -69,10 +69,19 @@ func ContactClient() (_result *dingtalkcontact_1_0.Client, _err error) {
 	return _result, _err
 }
 
-func GetUserInfo(accessToken string) (_dingtalk *DingTalk, _err error) {
+func GetFromId(id string) (_dingtalk *DingTalk, _err error) {
+	_dingtalk = &DingTalk{}
+	result := common.DB.First(_dingtalk, "id = ?", id)
+	if result.Error != nil {
+		return nil, fmt.Errorf("error getting dingtalk from id: %s, error: %w", id, result.Error)
+	}
+	return _dingtalk, nil
+}
+
+func GetUserInfoViaToken(accessToken string) (_dingtalk DingTalk, _err error) {
 	client, _err := ContactClient()
 	if _err != nil {
-		return nil, _err
+		return DingTalk{}, _err
 	}
 
 	getUserHeaders := &dingtalkcontact_1_0.GetUserHeaders{}
@@ -80,28 +89,27 @@ func GetUserInfo(accessToken string) (_dingtalk *DingTalk, _err error) {
 	_result, _err := client.GetUserWithOptions(tea.String("me"), getUserHeaders, &util.RuntimeOptions{})
 
 	if _err != nil {
-		return nil, _err
+		return DingTalk{}, _err
 	}
 
-	return &DingTalk{
+	return DingTalk{
 		OpenId:      *_result.Body.OpenId,
 		UnionId:     *_result.Body.UnionId,
 		Nickname:    *_result.Body.Nick,
 		AvatarUrl:   *_result.Body.AvatarUrl,
 		PhoneNumber: *_result.Body.Mobile,
 		StateCode:   *_result.Body.StateCode,
-		Email:       *_result.Body.Email,
 	}, nil
 
 }
 
-func GetAccessToken(code string) (accessToken string, _err error) {
+func GetAccessToken(authCode string) (accessToken string, _err error) {
 	client, _err := CreateClient()
 	if _err != nil {
 		return "", _err
 	}
 
-	getAccessTokenRequest.SetCode(code)
+	getAccessTokenRequest.SetCode(authCode)
 	result, _err := client.GetUserToken(&getAccessTokenRequest)
 	if _err != nil {
 		return "", _err

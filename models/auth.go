@@ -42,11 +42,11 @@ func DingTalkAuth(code string, client *utils.ClientInfo) error {
 	if accessToken, err := dingtalk.GetAccessToken(code); err != nil {
 		return fmt.Errorf("failed to get access token via dingtalk, code: %s, error: %s", code, err)
 	} else {
-		if userinfo, err := dingtalk.GetUserInfo(accessToken); err != nil {
+		if userinfo, err := dingtalk.GetUserInfoViaToken(accessToken); err != nil {
 			return fmt.Errorf("failed to get user info via dingtalk, code: %s, error: %s", code, err)
 		} else {
 			u := user.User{}
-			if err := u.FindWithDingtalk(userinfo.UnionId); err != nil {
+			if err := u.FindWithDingtalk(userinfo.OpenId); err != nil {
 				return fmt.Errorf("error logining with dingtalk, error: %w", err)
 			}
 			if err := u.LoginWithDingtalk(client); err != nil {
@@ -89,4 +89,27 @@ func RefleshToken(token string, client *utils.ClientInfo) (interface{}, error) {
 		AccessToken  string `json:"accessToken"`
 		RefreshToken string `json:"refreshToken"`
 	}{AccessToken: accessToken, RefreshToken: token}, nil
+}
+
+func GetUserInfo(_client *utils.ClientInfo) (interface{}, error) {
+	if _client.UserId > 0 {
+		_user, err := user.GetFromId(_client.UserId)
+		if err != nil {
+			return nil, fmt.Errorf("error get userinfo, error: %s", err)
+		} else {
+			if _user.DingTalkId != "" {
+				_dingtalk, err := dingtalk.GetFromId(_user.DingTalkId)
+				if err == nil {
+					return &struct {
+						Nick      string
+						Mobile    string
+						AvatarUrl string
+					}{_dingtalk.Nickname, _dingtalk.PhoneNumber, _dingtalk.AvatarUrl}, nil
+				}
+			}
+			return nil, fmt.Errorf("error get userinfo, error: %s", err)
+		}
+	} else {
+		return nil, fmt.Errorf("error get userinfo, error id: %d", _client.UserId)
+	}
 }

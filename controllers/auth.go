@@ -95,23 +95,23 @@ func OfficialAccountAuth(c *gin.Context) {
 }
 
 func DingTalkAuth(c *gin.Context) {
-	code := c.Query(common.CODE_KEY)
+	authCode := c.Query(common.AUTHCODE_KEY)
 	state := c.Query(common.STATE_KEY)
 	//utils.ResponseSuccessJson(c, "ok")
 	utils.ResponseText(c, utils.SUCCESS_MSG_CUSTOM)
-	if len(code) > 0 || len(state) > 0 {
+	if len(authCode) > 0 || len(state) > 0 {
 		wggo.WgGo(func() {
 			if client, err := utils.GetClientInfo(c); err != nil {
 				logrus.Errorf("error authenticating with dingtalk, error: %s", err)
 			} else {
 				client.SessionId = state
-				if err := models.DingTalkAuth(code, client); err != nil {
+				if err := models.DingTalkAuth(authCode, client); err != nil {
 					logrus.Errorf("error authenticating with dingtalk, error: %s", err)
 				}
 			}
 		})
 	} else {
-		logrus.Errorf("dingtalk auth, error code: %s or state: %s", code, state)
+		logrus.Errorf("dingtalk auth, error code: %s or state: %s", authCode, state)
 	}
 }
 
@@ -120,7 +120,17 @@ func GetMiniProgromQrcode(c *gin.Context) {
 }
 
 func GetUserInfo(c *gin.Context) {
-	utils.ResponseSuccessJson(c, "ok")
+	if client, err := utils.GetClientInfo(c); err != nil {
+		logrus.Errorf("error getting token for %s, error: %s", client.SessionId, err)
+		utils.ResponseFailedJson(c, utils.ERRCODE_REQUEST_PARAM_ERROR, utils.ERRMSG_REQUEST_PARAM_ERROR, nil, http.StatusBadRequest)
+	} else {
+		if userinfo, err := models.GetUserInfo(client); err != nil {
+			logrus.Errorf("error getting user info for %s, error: %s", client.LogFormatLong(), err)
+			utils.ResponseFailedJson(c, utils.ERRCODE_INVALID_Id, utils.ERRMSG_INVALID_Id, nil, http.StatusBadGateway)
+		} else {
+			utils.ResponseSuccessJson(c, userinfo)
+		}
+	}
 }
 
 func Registry(c *gin.Context) {

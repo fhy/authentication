@@ -24,7 +24,7 @@ var (
 )
 
 type WeChat struct {
-	OpenId      string `json:"id" gorm:"id primaryKey"`
+	OpenId      string `json:"id" gorm:"column:id;primaryKey"`
 	UnionId     string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

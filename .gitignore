@@ -17,6 +17,7 @@ vendor/
 conf/*_local.yml
 
 log/
+logs/
 
 # sqlite database file
 *.db

@@ -12,6 +12,7 @@ import (
 	"time"
 	"webb-auth/conf"
 	"webb-auth/db"
+	"webb-auth/dingtalk"
 	"webb-auth/redis"
 	"webb-auth/router"
 
@@ -29,6 +30,7 @@ func init() {
 	utils.InitLogger(&conf.Conf.Log)
 	db.Init(conf.Conf.DbType, conf.Conf.Dbconfig)
 	redis.Init(&conf.Conf.Redis)
+	dingtalk.Init(&conf.Conf.DingTalk)
 }
 
 func main() {
